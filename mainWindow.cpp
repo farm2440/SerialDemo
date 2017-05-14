@@ -8,6 +8,11 @@ MainWindow::MainWindow(QWidget *parent) :    QMainWindow(parent),    ui(new Ui::
     rxCursorPosition = 0;
     sPort = new QSerialPort(this); // Указател през който ще се работи с порта. ВАЖНО: Погледни файла SerialDemo.pro!
     connect(sPort, SIGNAL(readyRead()), this, SLOT(readSerial()));
+
+    //радиобутони за избор режима на изобразяване на приетите данни
+    connect(ui->rbTxt, SIGNAL(clicked()), this, SLOT(displayModeChanged()));
+    connect(ui->rbDec, SIGNAL(clicked()), this, SLOT(displayModeChanged()));
+    connect(ui->rbHex, SIGNAL(clicked()), this, SLOT(displayModeChanged()));
 }
 
 MainWindow::~MainWindow()
@@ -197,23 +202,23 @@ void MainWindow::readSerial()
     switch(displayMode)
     {
     case TXT:
-        ui->textBrowserRX->append(QString(rxBuf));
+        ui->textBrowserRX->insertPlainText(QString(rxBuf));
         break;
     case HEX:
         for( int i=0 ; i!=rxBuf.count() ; i++)
         {
             str = QString::number(rxBuf[i],16);
             if(str.length()==1) str = "0" + str;
-            ui->textBrowserRX->append(str);
+            ui->textBrowserRX->insertPlainText(str);
             rxCursorPosition++;
-            if(rxCursorPosition==7) ui->textBrowserRX->append("  ");
+            if(rxCursorPosition==7) ui->textBrowserRX->insertPlainText("  ");
             else
                 if(rxCursorPosition==15)
                 {
-                    ui->textBrowserRX->append("\n");
+                    ui->textBrowserRX->insertPlainText("\n");
                     rxCursorPosition = 0;
                 }
-                else ui->textBrowserRX->append(" ");
+                else ui->textBrowserRX->insertPlainText(" ");
         }
         break;
     case DEC:
@@ -222,16 +227,16 @@ void MainWindow::readSerial()
             str = QString::number(rxBuf[i],10);
             if(str.length()==1) str = "  " + str;
             if(str.length()==2) str = " " + str;
-            ui->textBrowserRX->append(str);
+            ui->textBrowserRX->insertPlainText(str);
             rxCursorPosition++;
-            if(rxCursorPosition==7) ui->textBrowserRX->append("  ");
+            if(rxCursorPosition==7) ui->textBrowserRX->insertPlainText("  ");
             else
                 if(rxCursorPosition==15)
                 {
-                    ui->textBrowserRX->append("\n");
+                    ui->textBrowserRX->insertPlainText("\n");
                     rxCursorPosition = 0;
                 }
-                else ui->textBrowserRX->append(" ");
+                else ui->textBrowserRX->insertPlainText(" ");
         }
         break;
     }
@@ -251,3 +256,41 @@ void MainWindow::displayModeChanged()
     qDebug() << "Display mode changed: " << displayMode;
 }
 
+void MainWindow::on_pbClearRx_clicked()
+{
+    //Изчиства приетите данни от textBrowserRX
+    ui->textBrowserRX->clear();
+}
+
+void MainWindow::on_pbSelectFile_clicked()
+{
+    //Избира името на файла който да се прати по сериен порт
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Select file to send"), tr("."));
+    ui->lineFileName->setText(fileName);
+}
+
+
+
+void MainWindow::on_pbSendFile_clicked()
+{
+    //Изпраща избрания файл по сериен порт ако името е коректно. Иначе вади предупредителен диалог
+    QFile file(ui->lineFileName->text());
+    if(!file.exists())
+    {
+        QMessageBox::warning(this, tr("WARNING"), tr("Selected file doesn't exist!"));
+        return;
+    }
+
+    bool result = file.open(QIODevice::ReadOnly);
+    if(!result)
+    {
+        QMessageBox::critical(this, tr("ERROR"), tr("Failed openning the file for reading!"));
+        return;
+    }
+
+    QByteArray txBuf = file.readAll();
+    file.close();
+
+    sPort->write(txBuf);
+    sPort->flush();
+}

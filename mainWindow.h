@@ -7,6 +7,7 @@
 #include <QtSerialPort/QSerialPort>
 #include <QMessageBox>              // Диалози за съобщения
 #include <QByteArray>               //Този клас се ползва за буфери
+#include <QFileDialog>
 
 namespace Ui {
 class MainWindow;
@@ -34,6 +35,12 @@ private slots:
     void readSerial(); //Този слот обслужва събитието QSerialPort::readyRead(). Извиква се когато има поне един байт получен по серен порт
 
     void displayModeChanged(); //Този слод се вика от промяна на радиобутоните TXT/HEX/DEC
+
+    void on_pbSelectFile_clicked();
+
+    void on_pbClearRx_clicked();
+
+    void on_pbSendFile_clicked();
 
 private:
     Ui::MainWindow *ui;

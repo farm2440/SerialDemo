@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>825</width>
+    <width>898</width>
     <height>514</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Serial Port Demo</string>
   </property>
   <property name="windowIcon">
    <iconset resource="res.qrc">
@@ -322,7 +322,11 @@
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_8">
              <item>
-              <widget class="QSpinBox" name="spinWriteByte"/>
+              <widget class="QSpinBox" name="spinWriteByte">
+               <property name="value">
+                <number>51</number>
+               </property>
+              </widget>
              </item>
              <item>
               <widget class="QPushButton" name="pbWriteByte">
@@ -339,7 +343,7 @@ BYTE</string>
              <item>
               <widget class="QLineEdit" name="lineWriteLine">
                <property name="text">
-                <string>HELLO</string>
+                <string>HELLO KITTY</string>
                </property>
               </widget>
              </item>
@@ -354,6 +358,13 @@ LINE</string>
             </layout>
            </item>
           </layout>
+         </item>
+         <item>
+          <widget class="Line" name="line">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
          </item>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_11">
@@ -379,7 +390,7 @@ FILE</string>
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="pushButton">
+            <widget class="QPushButton" name="pbSendFile">
              <property name="text">
               <string>SEND
 FILE</string>
@@ -389,7 +400,13 @@ FILE</string>
           </layout>
          </item>
          <item>
-          <widget class="QLineEdit" name="lineEdit">
+          <widget class="QLineEdit" name="lineFileName">
+           <property name="minimumSize">
+            <size>
+             <width>300</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="readOnly">
             <bool>true</bool>
            </property>
@@ -412,6 +429,13 @@ FILE</string>
        </spacer>
       </item>
      </layout>
+    </item>
+    <item>
+     <widget class="Line" name="line_2">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
     </item>
     <item>
      <widget class="QGroupBox" name="groupBox_2">
