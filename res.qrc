@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/res">
+        <file>res/com_plug01.png</file>
+        <file>res/com_plug01.ico</file>
+    </qresource>
+</RCC>
