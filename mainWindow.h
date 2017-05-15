@@ -9,6 +9,10 @@
 #include <QByteArray>               //Този клас се ползва за буфери
 #include <QFileDialog>
 
+#include <QProgressBar>
+#include <QTimer>
+#include <QLabel>
+
 namespace Ui {
 class MainWindow;
 }
@@ -34,6 +38,8 @@ private slots:
 
     void readSerial(); //Този слот обслужва събитието QSerialPort::readyRead(). Извиква се когато има поне един байт получен по серен порт
 
+    void onBytesWritten(qint64 count);
+
     void displayModeChanged(); //Този слод се вика от промяна на радиобутоните TXT/HEX/DEC
 
     void on_pbSelectFile_clicked();
@@ -49,6 +55,9 @@ private:
 
     enum DisplayMode {TXT, HEX, DEC} displayMode;
     int rxCursorPosition; // Помощна променлива за изобразяване на приетите данни в textBrowserRX
+
+    QProgressBar *progBarSending;
+    QLabel *lblStatus;
 };
 
 #endif // MAINWINDOW_H

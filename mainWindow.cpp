@@ -8,6 +8,19 @@ MainWindow::MainWindow(QWidget *parent) :    QMainWindow(parent),    ui(new Ui::
     rxCursorPosition = 0;
     sPort = new QSerialPort(this); // Указател през който ще се работи с порта. ВАЖНО: Погледни файла SerialDemo.pro!
     connect(sPort, SIGNAL(readyRead()), this, SLOT(readSerial()));
+    connect(sPort, SIGNAL(bytesWritten(qint64)), this, SLOT(onBytesWritten(qint64)));
+
+    //Прогрес бар показва изпращането на файл, който отнема повече време
+    progBarSending = new QProgressBar(this);
+    ui->statusBar->addWidget(progBarSending);
+    progBarSending->setMaximum(5);
+    progBarSending->setValue(0);
+    progBarSending->setVisible(false);
+
+    lblStatus = new QLabel(this);
+    ui->statusBar->addWidget(lblStatus);
+    lblStatus->setText(tr("Sending file..."));
+    lblStatus->setVisible(false);
 
     //радиобутони за избор режима на изобразяване на приетите данни
     connect(ui->rbTxt, SIGNAL(clicked()), this, SLOT(displayModeChanged()));
@@ -139,7 +152,7 @@ void MainWindow::on_pbOpenPort_clicked()
             errReason = tr("PermissionError");
             break;
         default:
-            errReason = QString("ErrorCde=%1").arg(errCode);
+            errReason = QString("ErrorCode=%1").arg(errCode);
             break;
         }
         QMessageBox::critical(this, tr("ERROR!"), tr("Failed openning serial port!\nReason: ") + errReason);
@@ -171,7 +184,13 @@ void MainWindow::on_pbWriteByte_clicked()
     //Изпраща един байт по сериен порт. По същия начин с QByteArray могат да се изпратят произволин брой байтове.
     QByteArray txBuf;
 
-    if(!sPort->isOpen()) return;
+    if(!sPort->isOpen())
+    {
+        //Ако серииния порт не е отворен, вади предупреждение и излиза
+        QMessageBox::warning(this, tr("WARNING"), tr("The serial port is not open!"));
+        return;
+    }
+
     txBuf[0] = (char) ui->spinWriteByte->value();
     sPort->write(txBuf);
     sPort->flush();
@@ -182,7 +201,13 @@ void MainWindow::on_pbWriteLine_clicked()
     //Изпраща низа от lineWriteLine като добавя и CR,LF
     QByteArray txBuf;
 
-    if(!sPort->isOpen()) return;
+    if(!sPort->isOpen())
+    {
+        //Ако серииния порт не е отворен, вади предупреждение и излиза
+        QMessageBox::warning(this, tr("WARNING"), tr("The serial port is not open!"));
+        return;
+    }
+
     QString line = ui->lineWriteLine->text();
     txBuf = line.toLatin1(); //toLatin1 е метод на класа QString и връща QByteArray с ASCII символите на низа.
     txBuf.append('\r');
@@ -242,6 +267,32 @@ void MainWindow::readSerial()
     }
 }
 
+void MainWindow::onBytesWritten(qint64 count)
+{
+    qDebug() << " onBytesWritten count=" << count;
+
+    //Придвижваме прогрес бара според броя изпратени байтове
+    int bytesSent = progBarSending->value();
+    int bytesSoFar = bytesSent + (int) count;
+    progBarSending->setValue(bytesSent + (int) count);
+    //Диагностично съобщение в конзолата
+    qDebug() << "Sent " << bytesSoFar << "so far...";
+    //Проверка дали е изпратен целия файл
+    if(bytesSoFar==progBarSending->maximum())
+    {
+        qDebug() << "Sending file complete!";
+        //Файла е изпратен. Скриваме progBarSending и lblStatus
+        progBarSending->setVisible(false);
+        lblStatus->setVisible(false);
+        //Показваме съобщение в статус бара
+        ui->statusBar->showMessage("Sending file complete!");
+        //Бутоните за изпращане се разблокират
+        ui->pbWriteByte->setEnabled(true);
+        ui->pbWriteLine->setEnabled(true);
+        ui->pbSendFile->setEnabled(true);
+    }
+}
+
 void MainWindow::displayModeChanged()
 {
     //Променя формата на показване на приетите данни
@@ -269,10 +320,20 @@ void MainWindow::on_pbSelectFile_clicked()
     ui->lineFileName->setText(fileName);
 }
 
-
-
 void MainWindow::on_pbSendFile_clicked()
 {
+    //В статус бара се показва прогрес бар за изпращаните данни. За времето на изпращане
+    // някои бутони са блокирани.
+    //При всяко изпразване на буфера на предаване се вика слота onBytesWritten()
+    // Там се увеличава прогресбара и при приключване там се разблокират бутоните за изпращане
+
+    if(!sPort->isOpen())
+    {
+        //Ако серииния порт не е отворен, вади предупреждение и излиза
+        QMessageBox::warning(this, tr("WARNING"), tr("The serial port is not open!"));
+        return;
+    }
+
     //Изпраща избрания файл по сериен порт ако името е коректно. Иначе вади предупредителен диалог
     QFile file(ui->lineFileName->text());
     if(!file.exists())
@@ -290,7 +351,17 @@ void MainWindow::on_pbSendFile_clicked()
 
     QByteArray txBuf = file.readAll();
     file.close();
-
+    qDebug() << "File size is " << txBuf.count() << " bytes.";
+    //Показваме прогрес бар и съобщение в статуса
+    lblStatus->setVisible(true);
+    progBarSending->setVisible(true);
+    progBarSending->setMaximum(txBuf.count());
+    progBarSending->setValue(0);
+    //Бутоните за изпращане се блокират
+    ui->pbWriteByte->setEnabled(false);
+    ui->pbWriteLine->setEnabled(false);
+    ui->pbSendFile->setEnabled(false);
+    //започва изпращането
     sPort->write(txBuf);
     sPort->flush();
 }
